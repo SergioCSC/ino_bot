@@ -12,7 +12,8 @@ def clear_ebala(message_tag: Tag) -> None:
         if tag.string and cfg.EBALA in tag.string:
             string = str(tag.string)
             position = string.find(cfg.EBALA)
-            new_string = string[0:position] + string[position + len(cfg.EBALA):]
+            new_string = string[0:position] \
+                + string[position + len(cfg.EBALA):]
             tag.string.replace_with(new_string)
 
 
@@ -50,7 +51,6 @@ def simplify_html(html_tag: Tag) -> None:
             tag.unwrap()
         else:
             tag.attrs = {'href': tag.attrs['href']}
-            
 
     for tag in html_tag.find_all('span'):
         if 'class' not in tag.attrs or tag.attrs['class'] != ['tg-spoiler']:
@@ -96,18 +96,31 @@ def get_last_inos_posts_text() -> str:
         # url = 'https://t.me/s/yurydud'
         response = requests.get(ino_url, allow_redirects=False)
         if response.status_code != 200:
-            text = f'{ino_url} returned status code: {response.status_code}. Sorry'
-            ino_texts.append(text)
+            ino_output_text = f'''{ino_url} returned status code: \
+                     {response.status_code}. Sorry'''
+            ino_texts.append(ino_output_text)
             continue
         soup = BeautifulSoup(response.text, 'html5lib')  # 'html.parser')
         messages = soup.find_all(attrs={'class': 'tgme_widget_message_text'})
-        last_msg = messages[-1]
+        last_msg = messages[-2]
+        ino_output_text = ''
+        for tag in list(last_msg.previous_siblings) \
+                + list(last_msg.next_siblings):
+            if tag.name == 'a' and 'class' in tag.attrs:
+                href = tag.attrs['href']
+                class_values = tag.attrs['class']
+                if 'tgme_widget_message_photo_wrap' in class_values:
+                    # ino_output_text += f'photo: {href}\n\n'
+                    ino_output_text += f'<a href="{href}">photo\n\n</a>'
+                if 'tgme_widget_message_video_wrap' in class_values or \
+                        'tgme_widget_message_video_player' in class_values:
+                    ino_output_text += f'<a href="{href}">video\n\n</a>'
 
         clear_ebala(last_msg)
         simplify_html(last_msg)
-        text = get_str_without_surrounding_tag(last_msg)
-        text = '@' + ino + '\n\n' + text
-        ino_texts.append(text)
+        ino_output_text += get_str_without_surrounding_tag(last_msg)
+        ino_output_text = '@' + ino + '\n\n' + ino_output_text
+        ino_texts.append(ino_output_text)
     return ino_texts
 
 
@@ -115,7 +128,8 @@ def send_ino_updates(update: Update, context: CallbackContext) -> None:
     texts = get_last_inos_posts_text()
     for text in texts:
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text=text, parse_mode=ParseMode.HTML
+            chat_id=update.effective_chat.id, text=text,
+            parse_mode=ParseMode.HTML
         )
 
 
