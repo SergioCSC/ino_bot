@@ -1,13 +1,6 @@
 import config as cfg
 
 
-def clear_inos(inos: dict[str, int]) -> dict[str, int]:
-    cleared_inos = {name.strip(): post_id for name, post_id in inos.items()}
-    if '' in cleared_inos:
-        del cleared_inos['']
-    return cleared_inos
-
-
 def retrieve_inos() -> dict[str, int]:
     with open(cfg.INOS_FILENAME) as f:
         result = (ino.strip().split() for ino in f if ino.strip())
@@ -26,3 +19,10 @@ def update_inos(new_inos: dict[str, int]) -> None:
     old_inos = retrieve_inos()
     all_inos = old_inos | new_inos
     rewrite_inos(all_inos)
+
+
+def _clear_inos(inos: dict[str, int]) -> dict[str, int]:
+    cleared_inos = {name.strip(): post_id for name, post_id in inos.items()}
+    if '' in cleared_inos:
+        del cleared_inos['']
+    return cleared_inos
