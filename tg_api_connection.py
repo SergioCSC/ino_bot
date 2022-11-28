@@ -1,6 +1,7 @@
 import http_get_ino
 import base
 
+import time
 from telegram import Update
 from telegram import ParseMode
 from telegram.ext import Updater, CallbackContext, TypeHandler, CommandHandler
@@ -20,6 +21,7 @@ def send_ino_updates(update: Update, context: CallbackContext) -> None:
                 chat_id=chat_id, text=text,
                 parse_mode=ParseMode.HTML
             )
+            time.sleep(1)
     base.update_inos(chat_id, new_inos)
 
 

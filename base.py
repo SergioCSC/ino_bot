@@ -27,6 +27,8 @@ def update_inos(chat_id: int, new_inos: dict[str, int]) -> None:
 
     if not new_inos:
         return
+    
+    new_inos = _clear(new_inos)
 
     all_chats_inos = _retrieve_all_chats_inos()
 
@@ -35,3 +37,14 @@ def update_inos(chat_id: int, new_inos: dict[str, int]) -> None:
     all_chats_inos[chat_id] = new_inos
 
     _rewrite_all_chats_inos(all_chats_inos)
+
+
+def _clear(inos: dict[str, int]) -> dict[str, int]:
+    
+    def _clear_name(name: str) -> str:
+        for prefix in cfg.INO_PREFIXES:
+            if name.startswith(prefix):
+                name = name[len(prefix):]
+        return name
+
+    return {_clear_name(name): post_id for name, post_id in inos.items()}

@@ -2,3 +2,4 @@ EBALA = "ДАННОЕ СООБЩЕНИЕ (МАТЕРИАЛ) СОЗДАНО И (�
 INOS_JSON_FILENAME = 'inos.json'
 TELEGRAM_URL_PREFIX = 'https://t.me/'
 INO_URL_PREFIX = f'{TELEGRAM_URL_PREFIX}s/'
+INO_PREFIXES = (INO_URL_PREFIX, TELEGRAM_URL_PREFIX, '@')
