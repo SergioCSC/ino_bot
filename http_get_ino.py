@@ -4,6 +4,8 @@ import exceptions
 import http
 import requests
 from bs4 import BeautifulSoup, Tag
+from typing import Optional
+
 
 
 def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], int]:
@@ -72,11 +74,11 @@ def _simplify_html(html_tag: Tag) -> None:
         "span",
     }
 
-    def tag_is_not_allowed(tag):
+    def _tag_is_not_allowed(tag):
         if tag.name not in allowed_tags:
             return True
 
-    for tag in html_tag.find_all(tag_is_not_allowed, recursive=True):
+    for tag in html_tag.find_all(_tag_is_not_allowed, recursive=True):
         # print(tag.name)
         if tag.name == 'br':
             tag.replace_with('\n\n')
@@ -94,27 +96,40 @@ def _simplify_html(html_tag: Tag) -> None:
 
 
 def _get_str_without_surrounding_tag(post_tag: Tag) -> str:
-    result = [str(x).strip() for x in post_tag.children]
-    result = '\n\n'.join(x for x in result if x)
-    return result
+    children_strs = [str(x).strip() for x in post_tag.children]
+    joined_children_str = '\n\n'.join(x for x in children_strs if x)
+    return joined_children_str
 
 
 def _get_ino_url(ino_name: str) -> str:
     return cfg.INO_URL_PREFIX + ino_name
 
 
-def get_post_id(post: Tag, ino_name: str) -> int:
-    for tag in post.next_siblings:
-        if tag.name == 'div' and 'class' in tag.attrs \
-                and 'tgme_widget_message_footer' in tag.attrs['class']:
-            tag_date = tag.find('a', class_='tgme_widget_message_date')
-            href = tag_date.attrs['href']
-            post_id_str = href.replace(f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/', '')
-            post_id = int(post_id_str)
-            return post_id
+def _get_post_id(post: Tag, ino_name: str) -> int:
+
+    def _get_post_id_from_sibling_widget(tag: Tag) \
+            -> Optional[int]:
+        for s in tag.next_siblings:
+            if s.name == 'div' and 'class' in s.attrs \
+                    and 'tgme_widget_message_footer' in s.attrs['class']:
+                tag_date = s.find('a', class_='tgme_widget_message_date')
+                href = tag_date.attrs['href']
+                post_id_str = href.replace(f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/', '')
+                post_id = int(post_id_str)
+                return post_id
+        else:
+            return None
+    
+    if post_id := _get_post_id_from_sibling_widget(post):
+        return post_id
     else:
+        p = post.parent
+        if p.name == 'div' and 'class' in p.attrs \
+                and 'media_supported_cont' in p.attrs['class'] \
+                and (post_id := _get_post_id_from_sibling_widget(p)):
+            return post_id
         raise exceptions.TelegramSiteParsingError(
-            f'Cannot find post_id in the post. ino: {ino_name}')
+            f'Cannot find post id in the post. ino: {ino_name}')
     
 
 
@@ -126,7 +141,7 @@ def _get_new_posts(soup: BeautifulSoup, ino_name: str, last_seen_post_id: int) -
     for post in posts:
         if post.parent == prev_post:
             continue
-        post_id = get_post_id(post, ino_name)
+        post_id = _get_post_id(post, ino_name)
         max_post_id = max(max_post_id, post_id)
         if post_id > last_seen_post_id:
             new_posts.append(post)
