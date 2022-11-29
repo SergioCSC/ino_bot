@@ -62,11 +62,22 @@ def delete_inos(chat_id: int, del_inos: dict[str, int]) -> None:
     _manipulate_inos(chat_id, del_inos, Command.DELETE)
 
 
-    def _clear_name(name: str) -> str:
-        for prefix in cfg.INO_PREFIXES:
-            if name.startswith(prefix):
-                name = name[len(prefix):]
-        return name
+def _clear_name(name: str) -> str:
+    """clear a name of ino from prefix
+    >>> _clear_name('ino')
+    'ino'
+    >>> _clear_name('@ino')
+    'ino'
+    >>> _clear_name(f'{cfg.TELEGRAM_URL_PREFIX}ino')
+    'ino'
+    >>> _clear_name(f'{cfg.INO_URL_PREFIX}ino')
+    'ino'
+    """
+
+    for prefix in cfg.INO_PREFIXES:
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+    return name
 
 
 def _clear(inos: dict[str, int]) -> dict[str, int]:
@@ -76,3 +87,8 @@ def _clear(inos: dict[str, int]) -> dict[str, int]:
 def _rewrite_all_chats_inos(inos: dict[int, dict[str, int]]) -> None:
     with open(cfg.INOS_JSON_FILENAME, 'w') as f:
         json.dump(inos, f)
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
