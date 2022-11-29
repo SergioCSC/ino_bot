@@ -7,13 +7,12 @@ from bs4 import BeautifulSoup, Tag
 from typing import Optional
 
 
-
 def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], int]:
     ino_name, ino_last_post_id = ino
     ino_url = _get_ino_url(ino_name)
-    
+
     response = requests.get(ino_url, allow_redirects=False)
-    
+
     if (status := response.status_code) != 200:
         status_name = 'Redirect' if status == 302 else http.client.responses[status]
         ino_output = f'{ino_url} returned status code: {status} ({status_name}). Sorry'
@@ -31,7 +30,6 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
                 href = tag.attrs['href']
                 class_values = tag.attrs['class']
                 if 'tgme_widget_message_photo_wrap' in class_values:
-                    # ino_output_text += f'photo: {href}\n\n'
                     ino_output += f'<a href="{href}">photo\n\n</a>'
                 if 'tgme_widget_message_video_wrap' in class_values or \
                         'tgme_widget_message_video_player' in class_values:
@@ -54,6 +52,8 @@ def _clear_ebala(post_tag: Tag) -> None:
             new_string = string[0:position] \
                 + string[position + len(cfg.EBALA):]
             tag.string.replace_with(new_string)
+    else:
+        raise exceptions.NoEbalaError('All inos must have ebala')
 
 
 def _simplify_html(html_tag: Tag) -> None:
@@ -79,11 +79,11 @@ def _simplify_html(html_tag: Tag) -> None:
             return True
 
     for tag in html_tag.find_all(_tag_is_not_allowed, recursive=True):
-        # print(tag.name)
         if tag.name == 'br':
             tag.replace_with('\n\n')
         else:
             tag.unwrap()
+
     for tag in html_tag.find_all('a'):
         if 'href' not in tag.attrs:
             tag.unwrap()
@@ -97,7 +97,7 @@ def _simplify_html(html_tag: Tag) -> None:
 
 def _get_str_without_surrounding_tag(post_tag: Tag) -> str:
     children_strs = [str(x).strip() for x in post_tag.children]
-    joined_children_str = '\n\n'.join(x for x in children_strs if x)
+    joined_children_str = '\n'.join(x for x in children_strs if x)
     return joined_children_str
 
 
@@ -119,21 +119,22 @@ def _get_post_id(post: Tag, ino_name: str) -> int:
                 return post_id
         else:
             return None
-    
+
     if post_id := _get_post_id_from_sibling_widget(post):
         return post_id
-    else:
-        p = post.parent
-        if p.name == 'div' and 'class' in p.attrs \
-                and 'media_supported_cont' in p.attrs['class'] \
-                and (post_id := _get_post_id_from_sibling_widget(p)):
-            return post_id
-        raise exceptions.TelegramSiteParsingError(
-            f'Cannot find post id in the post. ino: {ino_name}')
-    
+
+    p = post.parent
+    if p.name == 'div' and 'class' in p.attrs \
+            and 'media_supported_cont' in p.attrs['class'] \
+            and (post_id := _get_post_id_from_sibling_widget(p)):
+        return post_id
+
+    raise exceptions.TelegramSiteParsingError(
+        f'Cannot find post id in the post. ino: {ino_name}')
 
 
-def _get_new_posts(soup: BeautifulSoup, ino_name: str, last_seen_post_id: int) -> tuple[list[Tag], int]:
+def _get_new_posts(soup: BeautifulSoup, ino_name: str,
+                   last_seen_post_id: int) -> tuple[list[Tag], int]:
     posts = soup.find_all(attrs={'class': 'tgme_widget_message_text'})
     new_posts = []
     max_post_id = -1

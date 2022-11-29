@@ -36,18 +36,18 @@ def add_ino_command(update: Update, context: CallbackContext) -> None:
     inos = _get_inos_from_update(update)
     base.update_inos(chat_id, inos)
 
+
 def del_ino_command(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     inos = _get_inos_from_update(update)
     base.delete_inos(chat_id, inos)
 
+
 def list_ino_command(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     inos = base.retrieve_inos(chat_id)
     text = ' '.join(ino_name for ino_name in inos)
-    context.bot.send_message(
-                chat_id=chat_id, text=text
-            )
+    context.bot.send_message(chat_id=chat_id, text=text)
 
 
 def main() -> None:
