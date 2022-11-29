@@ -4,7 +4,9 @@ import base
 import time
 from telegram import Update
 from telegram import ParseMode
-from telegram.ext import Updater, CallbackContext, TypeHandler, CommandHandler
+from telegram.ext import CallbackContext
+from telegram.ext import Updater
+from telegram.ext import TypeHandler, CommandHandler
 
 
 def send_ino_updates(update: Update, context: CallbackContext) -> None:
@@ -50,7 +52,7 @@ def list_ino_command(update: Update, context: CallbackContext) -> None:
     context.bot.send_message(chat_id=chat_id, text=text)
 
 
-def main() -> None:
+def start_long_polling():
     updater = Updater('5781055986:AAGuGUbgTk0MtZlydHFPltp2DEBHFX_QDTM')
     updater.dispatcher.add_handler(CommandHandler('add', add_ino_command))
     updater.dispatcher.add_handler(CommandHandler('del', del_ino_command))
@@ -59,7 +61,3 @@ def main() -> None:
     updater.start_polling()
     print('Started')
     updater.idle()
-
-
-if __name__ == '__main__':
-    main()
