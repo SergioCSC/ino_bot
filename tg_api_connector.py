@@ -1,3 +1,4 @@
+import config as cfg
 import http_get_posts
 import base
 
@@ -52,8 +53,13 @@ def list_ino_command(update: Update, context: CallbackContext) -> None:
     context.bot.send_message(chat_id=chat_id, text=text)
 
 
+def read_token() -> str:
+    with open(cfg.TOKEN_FILENAME) as f:
+        return f.read().strip()
+
+
 def start_long_polling():
-    updater = Updater('5781055986:AAGuGUbgTk0MtZlydHFPltp2DEBHFX_QDTM')
+    updater = Updater(read_token())
     updater.dispatcher.add_handler(CommandHandler('add', add_ino_command))
     updater.dispatcher.add_handler(CommandHandler('del', del_ino_command))
     updater.dispatcher.add_handler(CommandHandler('list', list_ino_command))
