@@ -1,8 +1,8 @@
-import tg_api_connection
+import tg_api_connector
 
 
 def main() -> None:
-    tg_api_connection.start_long_polling()
+    tg_api_connector.start_long_polling()
 
 
 if __name__ == '__main__':

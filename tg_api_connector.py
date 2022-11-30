@@ -1,4 +1,4 @@
-import http_get_ino
+import http_get_posts
 import base
 
 import time
@@ -14,7 +14,7 @@ def send_ino_updates(update: Update, context: CallbackContext) -> None:
     inos = base.retrieve_inos(chat_id)
     new_inos = {}
     for ino in inos.items():
-        texts, new_last_post_id = http_get_ino.get_last_posts_and_last_post_id(ino)
+        texts, new_last_post_id = http_get_posts.get_last_posts_and_last_post_id(ino)
         ino_name, old_last_post_id = ino
         if new_last_post_id > old_last_post_id:
             new_inos[ino_name] = new_last_post_id

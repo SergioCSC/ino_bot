@@ -53,7 +53,8 @@ def _clear_ebala(post_tag: Tag) -> None:
                 + string[position + len(cfg.EBALA):]
             tag.string.replace_with(new_string)
     else:
-        raise exceptions.NoEbalaError('All inos must have ebala')
+        pass
+        # raise exceptions.NoEbalaError('All inos must have ebala')
 
 
 def _simplify_html(html_tag: Tag) -> None:
