@@ -22,7 +22,7 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
 
     soup = BeautifulSoup(response.text, 'html5lib')  # 'html.parser')
     posts, new_last_post_id = _get_new_posts(soup, ino_name, ino_last_post_id)
-    for post in posts:
+    for post, post_id in posts:
         ino_output = ''
         for tag in list(post.previous_siblings) \
                 + list(post.next_siblings):
@@ -38,7 +38,8 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
         _clear_ebala(post)
         _simplify_html(post)
         ino_output += _get_str_without_surrounding_tag(post)
-        ino_output = '@' + ino_name + '\n\n' + ino_output
+        href = f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/{post_id}'
+        ino_output = f'@{ino_name}   <a href="{href}">post</a>' + '\n\n' + ino_output
         last_posts.append(ino_output)
 
     return last_posts, new_last_post_id
@@ -146,6 +147,6 @@ def _get_new_posts(soup: BeautifulSoup, ino_name: str,
         post_id = _get_post_id(post, ino_name)
         max_post_id = max(max_post_id, post_id)
         if post_id > last_seen_post_id:
-            new_posts.append(post)
+            new_posts.append((post, post_id))
         prev_post = post
     return new_posts, max_post_id
