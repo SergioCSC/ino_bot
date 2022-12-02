@@ -1,10 +1,15 @@
 import config as cfg
 import exceptions
 
+import re
 import http
 import requests
 from bs4 import BeautifulSoup, Tag
 from typing import Optional
+
+
+REGEXP_COMPILED_EBALA = re.compile(cfg.REGEXP_EBALA)
+REGEXP_COMPILED_MANY_LINE_BREAKS = re.compile(cfg.REGEXP_MANY_LINE_BREAKS)
 
 
 def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], int]:
@@ -35,52 +40,32 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
                         'tgme_widget_message_video_player' in class_values:
                     ino_output += f'<a href="{href}">video\n\n</a>'
 
-        _clear_ebala(post)
         _simplify_html(post)
         ino_output += _get_str_without_surrounding_tag(post)
+        ino_output = _clear_ebala(ino_output)
         href = f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/{post_id}'
-        ino_output = f'@{ino_name}   <a href="{href}">post</a>' + '\n\n' + ino_output
+        ino_output = f'<a href="{href}">{ino_name}</a>' + '\n\n' + ino_output
+        ino_output = REGEXP_COMPILED_MANY_LINE_BREAKS.sub('\n\n', ino_output)
         last_posts.append(ino_output)
 
     return last_posts, new_last_post_id
 
 
-def _clear_ebala(post_tag: Tag) -> None:
-    for tag in post_tag.contents + post_tag.find_all(True):
-        if tag.string and cfg.EBALA in tag.string:
-            string = str(tag.string)
-            position = string.find(cfg.EBALA)
-            new_string = string[0:position] \
-                + string[position + len(cfg.EBALA):]
-            tag.string.replace_with(new_string)
-    else:
-        pass
-        # raise exceptions.NoEbalaError('All inos must have ebala')
+def _clear_ebala(string: str) -> str:
+    clean_string = REGEXP_COMPILED_EBALA.sub('', string)
+    # if clean_string == string:
+    #     raise exceptions.NoEbalaError('All inos must have ebala')
+    return clean_string
 
 
 def _simplify_html(html_tag: Tag) -> None:
-    allowed_tags = {
-        "b",
-        "strong",
-        "i",
-        "em",
-        "u",
-        "ins",
-        "s",
-        "strike",
-        "del",
-        "tg-spoiler",
-        "code",
-        "pre",
-        "a",
-        "span",
-    }
-
     def _tag_is_not_allowed(tag):
-        if tag.name not in allowed_tags:
+        if tag.name not in cfg.ALLOWED_TAGS:
             return True
 
     for tag in html_tag.find_all(_tag_is_not_allowed, recursive=True):
+        # if tag.name != 'br':  # deal with 'br' tag after str(tag)
+        #     tag.unwrap()
         if tag.name == 'br':
             tag.replace_with('\n\n')
         else:
@@ -98,9 +83,20 @@ def _simplify_html(html_tag: Tag) -> None:
 
 
 def _get_str_without_surrounding_tag(post_tag: Tag) -> str:
-    children_strs = [str(x).strip() for x in post_tag.children]
-    joined_children_str = '\n'.join(x for x in children_strs if x)
-    return joined_children_str
+    # children_strs = [str(x).strip() for x in post_tag.children]
+    # joined_children_str = '\n'.join(x for x in children_strs if x)
+    result = ''
+    for tag in post_tag.children:
+        # _simplify_html(tag)
+        str_tag = str(tag)
+        # str_tag = str_tag.replace('<br/>', '\n\n')
+        # str_tag = str_tag.replace('<br>', '\n\n')
+        if tag.name in cfg.ALLOWED_BLOCK_TAGS:
+            result += f'\n\n{str_tag}\n\n'
+        else:
+            result += str_tag
+
+    return result
 
 
 def _get_ino_url(ino_name: str) -> str:
