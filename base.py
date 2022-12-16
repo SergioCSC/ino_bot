@@ -29,16 +29,14 @@ def _manipulate_inos(chat_id: int, new_inos: dict[str, int], command: Command) -
     def _manipulate(_old_inos: dict[str, int], _new_inos: dict[str, int], command: Command) \
             -> dict[str, int]:
 
-        match command:
-            case Command.UPDATE:
-                return _old_inos | _new_inos
-            case Command.DELETE:
-                for ino in _new_inos:
-                    if ino in _old_inos:
-                        del _old_inos[ino]
-                return _old_inos
-            case _:
-                raise NotImplementedError('Unknown database command')
+        if command is Command.UPDATE:
+            return _old_inos | _new_inos
+        if command is Command.DELETE:
+            for ino in _new_inos:
+                if ino in _old_inos:
+                    del _old_inos[ino]
+            return _old_inos
+        raise NotImplementedError('Unknown database command')
 
     if not new_inos:
         return
