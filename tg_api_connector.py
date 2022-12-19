@@ -6,30 +6,24 @@ import asyncio
 import json
 import time
 
-import pathlib
-import sys
-lib_folder = pathlib.Path(__file__).parent / 'libs_for_aws_lambda'
-sys.path.append(str(lib_folder))
-
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
-from telegram.ext import Updater
 from telegram.ext import TypeHandler, CommandHandler
 
 from telegram.ext import Application
-from telegram.ext import ApplicationBuilder
 
 
 async def get_inos_updates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
-    texts = model.get_new_messages(chat_id)
-    for text in texts:
-        await context.bot.send_message(
-            chat_id=chat_id, text=text,
-            parse_mode=ParseMode.HTML
-        )
-        time.sleep(1)
+    chat_texts = model.get_new_messages(chat_id)
+    for ino_texts in chat_texts:  # TODO send many messages in one Update
+        for ino_text in ino_texts:
+            await context.bot.send_message(  # TODO: reply
+                chat_id=chat_id, text=ino_text,
+                parse_mode=ParseMode.HTML
+            )
+        # time.sleep(1)
 
 
 async def add_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -47,8 +41,9 @@ async def del_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def list_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = base.retrieve_inos(chat_id)
-    text = ' '.join(ino_name for ino_name in inos)
-    await context.bot.send_message(chat_id=chat_id, text=text)
+    if inos:
+        text = ' '.join(ino_name for ino_name in inos)
+        await context.bot.send_message(chat_id=chat_id, text=text)  # TODO: reply
 
 
 async def clear_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

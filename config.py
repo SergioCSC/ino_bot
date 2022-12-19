@@ -1,3 +1,13 @@
+from pathlib import Path
+from sys import path
+from os import environ
+
+AWS_LAMBDA_FUNCTION_NAME_ENV = 'AWS_LAMBDA_FUNCTION_NAME'
+IN_AWS_LAMBDA = AWS_LAMBDA_FUNCTION_NAME_ENV in environ
+if IN_AWS_LAMBDA:
+    lib_folder = Path(__file__).parent / 'libs_for_aws_lambda'
+    path.append(str(lib_folder))
+
 
 REGEXP_MANY_LINE_BREAKS = r'\s*(\n\s*){3,}'
 REGEXP_EBALA = r'(ДАННОЕ СООБЩЕНИЕ|НАСТОЯЩИЙ МАТЕРИАЛ) [-,\.()\w ]+ ИНОСТРАНН(ОГО|ЫХ) АГЕНТ(А|ОВ)[\.)]*'
