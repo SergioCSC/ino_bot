@@ -23,8 +23,9 @@ def _load_json() -> dict[str, dict[str, int]]:
         return json_dict
     else:
         table = boto3.resource("dynamodb").Table("inobot")
-        response = table.get_item(Key={'my_partition_key_0': "mu"})['Item']
-        json_dict = json.loads(response['json']) if 'json' in response else {}
+        response = table.get_item(Key={'my_partition_key_0': "mu"})
+        json_str = response.get('Item', {}).get('json', '{}')
+        json_dict = json.loads(json_str)
         return json_dict
 
 
