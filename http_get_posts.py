@@ -10,13 +10,18 @@ from typing import Optional
 
 REGEXP_COMPILED_EBALA = re.compile(cfg.REGEXP_EBALA)
 REGEXP_COMPILED_MANY_LINE_BREAKS = re.compile(cfg.REGEXP_MANY_LINE_BREAKS)
+SESSION = requests.Session()
+
+
+def http_get(ino_url):
+    return SESSION.get(ino_url, allow_redirects=False)
 
 
 def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], int]:
     ino_name, ino_last_post_id = ino
     ino_url = _get_ino_url(ino_name)
 
-    response = requests.get(ino_url, allow_redirects=False)
+    response = http_get(ino_url)
 
     if (status := response.status_code) != 200:
         status_name = 'Redirect' if status == 302 else http.client.responses[status]
@@ -25,7 +30,7 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
 
     last_posts = []
 
-    soup = BeautifulSoup(response.text, 'html5lib')  # 'html.parser')
+    soup = BeautifulSoup(response.text, 'lxml')  # 'lxml' 'html.parser' 'html5lib'
     posts, new_last_post_id = _get_new_posts(soup, ino_name, ino_last_post_id)
     for post, post_id in posts:
         ino_output = ''

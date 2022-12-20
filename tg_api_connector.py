@@ -4,40 +4,68 @@ import base  # TODO refuse to use the database directly in this module
 
 import asyncio
 import json
-import time
+import yappi
+from pathlib import Path
 
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from telegram.ext import TypeHandler, CommandHandler
-
 from telegram.ext import Application
 
 
+# def time_measure_of_handler(handler):
+#     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#         # cProfile.runctx('handler(update, context)', globals(), locals())
+#         start_time = time.time()
+#         result = await handler(update, context)
+#         t = time.time() - start_time
+#         chat_id = update.effective_chat.id
+#         time_text = f'{t:.1f} sec  handler: {handler.__name__}()'  # for {chat_id = }
+#         print(time_text)
+#         await context.bot.send_message(  # TODO: reply
+#             chat_id=chat_id, text=time_text,
+#             parse_mode=ParseMode.HTML
+#         )
+#         # return result
+
+#     return wrapper
+
+
+# @time_measure_of_handler
 async def get_inos_updates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     chat_texts = model.get_new_messages(chat_id)
     for ino_texts in chat_texts:  # TODO send many messages in one Update
-        for ino_text in ino_texts:
+        ino_all_texts_in_one = ''
+        for ino_text in reversed(ino_texts):
+            if len(ino_text) + 3 + len(ino_all_texts_in_one) \
+                    > cfg.TELEGRAM_MAX_POST_LENGTH:
+                break
+            ino_all_texts_in_one = ino_text + '\n\n\n' + ino_all_texts_in_one
+
+        if ino_all_texts_in_one:
             await context.bot.send_message(  # TODO: reply
-                chat_id=chat_id, text=ino_text,
+                chat_id=chat_id, text=ino_all_texts_in_one,
                 parse_mode=ParseMode.HTML
             )
-        # time.sleep(1)
 
 
+# @time_measure_of_handler
 async def add_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = _get_inos_from_update(update)
     base.update_inos(chat_id, inos)
 
 
+# @time_measure_of_handler
 async def del_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = _get_inos_from_update(update)
     base.delete_inos(chat_id, inos)
 
 
+# @time_measure_of_handler
 async def list_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = base.retrieve_inos(chat_id)
@@ -46,6 +74,7 @@ async def list_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await context.bot.send_message(chat_id=chat_id, text=text)  # TODO: reply
 
 
+# @time_measure_of_handler
 async def clear_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # del_ino_command(update, CallbackContext)
     # add_ino_command(update, CallbackContext)
@@ -54,6 +83,7 @@ async def clear_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     _clear_inos(chat_id, inos)
 
 
+# @time_measure_of_handler
 async def clear_all_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = base.retrieve_inos(chat_id)
@@ -94,7 +124,12 @@ def handle_updates_via_webhook(event, context):
     # update = Update.de_json(json.loads(event['body']), application.bot)
     # await application.process_update(update)
     # return asyncio.get_event_loop().run_until_complete(main(event, context))
-    return asyncio.run(main(event, context))
+
+    yappi.set_clock_type("WALL")
+    with yappi.run():
+        result = asyncio.run(main(event, context))
+    yappi.get_func_stats().print_all()
+    return result
 
 
 async def main(event, context):
@@ -118,5 +153,12 @@ async def main(event, context):
 
 
 if __name__ == '__main__':
-    application = get_application_with_handlers()
-    application.run_polling()
+
+    aws_body_file = Path(__file__).parent / 'aws_examples' / 'event_body.json'
+    with open(aws_body_file) as f:
+        event = json.load(f)
+
+    handle_updates_via_webhook(event, None)
+
+    # application = get_application_with_handlers()
+    # application.run_polling()
