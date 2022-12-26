@@ -1,10 +1,11 @@
 import config as cfg
 import model
 import base  # TODO refuse to use the database directly in this module
+import utils
 
 import asyncio
 import json
-import yappi
+import time
 from pathlib import Path
 
 from telegram import Update
@@ -14,25 +15,25 @@ from telegram.ext import TypeHandler, CommandHandler
 from telegram.ext import Application
 
 
-# def time_measure_of_handler(handler):
-#     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#         # cProfile.runctx('handler(update, context)', globals(), locals())
-#         start_time = time.time()
-#         result = await handler(update, context)
-#         t = time.time() - start_time
-#         chat_id = update.effective_chat.id
-#         time_text = f'{t:.1f} sec  handler: {handler.__name__}()'  # for {chat_id = }
-#         print(time_text)
-#         await context.bot.send_message(  # TODO: reply
-#             chat_id=chat_id, text=time_text,
-#             parse_mode=ParseMode.HTML
-#         )
-#         # return result
+def time_measure_of_handler(handler):
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        # cProfile.runctx('handler(update, context)', globals(), locals())
+        start_time = time.time()
+        result = await handler(update, context)
+        t = time.time() - start_time
+        chat_id = update.effective_chat.id
+        time_text = f'{t:.1f} sec  handler: {handler.__name__}()'  # for {chat_id = }
+        print(time_text)
+        await context.bot.send_message(  # TODO: reply
+            chat_id=chat_id, text=time_text,
+            parse_mode=ParseMode.HTML
+        )
+        return result
 
-#     return wrapper
+    return wrapper
 
 
-# @time_measure_of_handler
+@utils.time_measure
 async def _send_messages_to_chat(context: ContextTypes.DEFAULT_TYPE,
                                  chat_id: int, chat_texts: list[list[str]]):
     # for ino_texts in chat_texts:
@@ -58,7 +59,7 @@ async def _send_messages_to_chat(context: ContextTypes.DEFAULT_TYPE,
             )
 
 
-# @time_measure_of_handler
+@time_measure_of_handler
 async def get_inos_updates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     chat_texts = model.get_new_messages(chat_id)
@@ -66,21 +67,21 @@ async def get_inos_updates(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await _send_messages_to_chat(context, chat_id=chat_id, chat_texts=chat_texts)
 
 
-# @time_measure_of_handler
+@time_measure_of_handler
 async def add_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = _get_inos_from_update(update)
     base.update_inos(chat_id, inos)
 
 
-# @time_measure_of_handler
+@time_measure_of_handler
 async def del_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = _get_inos_from_update(update)
     base.delete_inos(chat_id, inos)
 
 
-# @time_measure_of_handler
+@time_measure_of_handler
 async def list_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = base.retrieve_inos(chat_id)
@@ -89,7 +90,7 @@ async def list_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await context.bot.send_message(chat_id=chat_id, text=text)  # TODO: reply
 
 
-# @time_measure_of_handler
+@time_measure_of_handler
 async def clear_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # del_ino_command(update, CallbackContext)
     # add_ino_command(update, CallbackContext)
@@ -98,7 +99,7 @@ async def clear_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     _clear_inos(chat_id, inos)
 
 
-# @time_measure_of_handler
+@time_measure_of_handler
 async def clear_all_inos_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id  # type: ignore
     inos = base.retrieve_inos(chat_id)
@@ -167,13 +168,18 @@ async def main(event, context):
         }
 
 
-if __name__ == '__main__':
+def simulate_webhook_call() -> None:
 
     aws_body_file = Path(__file__).parent / 'aws_examples' / 'event_body.json'
     with open(aws_body_file) as f:
         event = json.load(f)
 
     handle_updates_via_webhook(event, None)
+
+
+if __name__ == '__main__':
+
+    simulate_webhook_call()
 
     # application = get_application_with_handlers()
     # application.run_polling()
