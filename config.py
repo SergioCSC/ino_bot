@@ -10,7 +10,7 @@ if IN_AWS_LAMBDA:
 
 
 REGEXP_MANY_LINE_BREAKS = r'\s*(\n\s*){3,}'
-REGEXP_EBALA = r'(ДАННОЕ СООБЩЕНИЕ|НАСТОЯЩИЙ МАТЕРИАЛ) [-,\.()\w ]+ ИНОСТРАНН(ОГО|ЫХ) АГЕНТ(А|ОВ)[\.)]*'
+REGEXP_EBALA = r'(18\+  )?(ДАННОЕ СООБЩЕНИЕ|НАСТОЯЩИЙ МАТЕРИАЛ) [-,\.()\w ]+ ИНОСТРАНН(ОГО|ЫХ|ЫМ) АГЕНТ(А|ОВ|ОМ)[^\r\n]*'
 
 INOS_JSON_FILENAME = 'inos.json'
 TOKEN_FILENAME = 'token.txt'
