@@ -33,22 +33,37 @@ from telegram.ext import Application
 
 
 # @time_measure_of_handler
-async def get_inos_updates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    chat_id = update.effective_chat.id  # type: ignore
-    chat_texts = model.get_new_messages(chat_id)
+async def _send_messages_to_chat(context: ContextTypes.DEFAULT_TYPE,
+                                 chat_id: int, chat_texts: list[list[str]]):
+    # for ino_texts in chat_texts:
+    #     for ino_text in ino_texts:
+    #         await context.bot.send_message(  # TODO: reply
+    #             chat_id=chat_id, text=ino_text,
+    #             parse_mode=ParseMode.HTML
+    #         )
+
+    delimeter = '\n\n\n\n'
     for ino_texts in chat_texts:  # TODO send many messages in one Update
         ino_all_texts_in_one = ''
         for ino_text in reversed(ino_texts):
-            if len(ino_text) + 3 + len(ino_all_texts_in_one) \
-                    > cfg.TELEGRAM_MAX_POST_LENGTH:
+            new_ino_all_texts_in_one = ino_text + delimeter + ino_all_texts_in_one
+            if len(new_ino_all_texts_in_one) > cfg.TELEGRAM_MAX_POST_LENGTH:
                 break
-            ino_all_texts_in_one = ino_text + '\n\n\n' + ino_all_texts_in_one
+            ino_all_texts_in_one = new_ino_all_texts_in_one
 
         if ino_all_texts_in_one:
             await context.bot.send_message(  # TODO: reply
                 chat_id=chat_id, text=ino_all_texts_in_one,
                 parse_mode=ParseMode.HTML
             )
+
+
+# @time_measure_of_handler
+async def get_inos_updates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.effective_chat.id  # type: ignore
+    chat_texts = model.get_new_messages(chat_id)
+
+    await _send_messages_to_chat(context, chat_id=chat_id, chat_texts=chat_texts)
 
 
 # @time_measure_of_handler
