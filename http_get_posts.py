@@ -150,7 +150,11 @@ def _get_new_posts(soup: BeautifulSoup, ino_name: str,
     for post in posts:
         if post.parent == prev_post:
             continue
-        post_id = _get_post_id(post, ino_name)
+        try:
+            post_id = _get_post_id(post, ino_name)
+        except exceptions.TelegramSiteParsingError as e:
+            print(e)
+            continue
         max_post_id = max(max_post_id, post_id)
         if post_id > last_seen_post_id:
             new_posts.append((post, post_id))
