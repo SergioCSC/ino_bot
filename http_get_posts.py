@@ -32,24 +32,29 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
 
     soup = BeautifulSoup(response.text, 'lxml')  # 'lxml' 'html.parser' 'html5lib'
     posts, new_last_post_id = _get_new_posts(soup, ino_name, ino_last_post_id)
+
     for post, post_id in posts:
-        ino_output = ''
+        href = f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/{post_id}'
+        href_prefix = f'<a href="{href}">{ino_name}'
+        
         for tag in list(post.previous_siblings) \
                 + list(post.next_siblings):
             if tag.name == 'a' and 'href' in tag.attrs and 'class' in tag.attrs:
-                href = tag.attrs['href']
                 class_values = tag.attrs['class']
                 if 'tgme_widget_message_photo_wrap' in class_values:
-                    ino_output += f'<a href="{href}">photo\n\n</a>'
+                    href_prefix += ' (photo)</a>\n\n'
+                    break
                 if 'tgme_widget_message_video_wrap' in class_values or \
                         'tgme_widget_message_video_player' in class_values:
-                    ino_output += f'<a href="{href}">video\n\n</a>'
+                    href_prefix += ' (video)</a>\n\n'
+                    break
+        else:
+            href_prefix += '</a>\n\n'
 
         _simplify_html(post)
+        ino_output = href_prefix
         ino_output += _get_str_without_surrounding_tag(post)
         ino_output = _clear_ebala(ino_output)
-        href = f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/{post_id}'
-        ino_output = f'<a href="{href}">{ino_name}</a>' + '\n\n' + ino_output
         ino_output = REGEXP_COMPILED_MANY_LINE_BREAKS.sub('\n\n', ino_output)
         last_posts.append(ino_output)
 
