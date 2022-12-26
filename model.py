@@ -1,7 +1,8 @@
 import base
 import http_get_posts
+import utils
 
-
+@utils.time_measure
 def get_new_messages(chat_id: int) -> list[list[str]]:
     inos = base.retrieve_inos(chat_id)
     new_inos = {}

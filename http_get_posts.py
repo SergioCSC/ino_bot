@@ -1,5 +1,6 @@
 import config as cfg
 import exceptions
+import utils
 
 import re
 import http
@@ -17,6 +18,7 @@ def http_get(ino_url):
     return SESSION.get(ino_url, allow_redirects=False)
 
 
+@utils.time_measure
 def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], int]:
     ino_name, ino_last_post_id = ino
     ino_url = _get_ino_url(ino_name)
@@ -36,7 +38,7 @@ def get_last_posts_and_last_post_id(ino: tuple[str, int]) -> tuple[list[str], in
     for post, post_id in posts:
         href = f'{cfg.TELEGRAM_URL_PREFIX}{ino_name}/{post_id}'
         href_prefix = f'<a href="{href}">{ino_name}'
-        
+
         for tag in list(post.previous_siblings) \
                 + list(post.next_siblings):
             if tag.name == 'a' and 'href' in tag.attrs and 'class' in tag.attrs:
