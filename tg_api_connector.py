@@ -5,7 +5,6 @@ import utils
 
 import asyncio
 import json
-# import yappi
 import time
 from pathlib import Path
 
@@ -137,25 +136,22 @@ def get_application_with_handlers() -> Application:
 
 
 def handle_updates_via_webhook(event, context):
-    # application = get_application_with_handlers()
-    # update = Update.de_json(json.loads(event['body']), application.bot)
-    # await application.process_update(update)
-    # return asyncio.get_event_loop().run_until_complete(main(event, context))
 
-    return asyncio.run(main(event, context))
-    # yappi.set_clock_type("WALL")
-    # with yappi.run():
-    #     result = asyncio.run(main(event, context))
-    # if cfg.IN_AWS_LAMBDA:
-    #     yappi.get_func_stats().print_all()
-    # else:
-    #     current_time = time.strftime("%H_%M_%S___%d_%b_%Y", time.localtime())
-    #     out_filedir = Path(__file__).parent / 'profiler'
-    #     out_filedir.mkdir(exist_ok=True)
-    #     out_filepath = out_filedir / f'{current_time}.txt'
-    #     with open(out_filepath, 'w') as f:
-    #         yappi.get_func_stats().print_all(out=f)
-    # return result
+    # return asyncio.run(main(event, context))
+
+    if not cfg.IN_AWS_LAMBDA:
+        import yappi
+        yappi.set_clock_type("WALL")
+        with yappi.run():
+            result = asyncio.run(main(event, context))
+        current_time = time.strftime("%H_%M_%S___%d_%b_%Y", time.localtime())
+        out_filedir = Path(__file__).parent / 'profiler'
+        out_filedir.mkdir(exist_ok=True)
+        out_filepath = out_filedir / f'{current_time}.txt'
+        with open(out_filepath, 'w') as f:
+            yappi.get_func_stats().sort("ttot", "desc").print_all(out=f)
+
+    return result
 
 
 async def main(event, context):
