@@ -13,6 +13,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from telegram.ext import TypeHandler, CommandHandler
 from telegram.ext import Application
+from telegram.error import BadRequest
 
 
 def time_measure_of_handler(handler):
@@ -22,10 +23,11 @@ def time_measure_of_handler(handler):
         result = await handler(update, context)
         t = time.time() - start_time
         chat_id = update.effective_chat.id  # type: ignore
-        time_text = f'{t:.1f} sec  handler: {handler.__name__}()'  # for {chat_id = }
-        print(time_text)
+        time_msg = f'{t:.1f}s'
+        time_log = f'{time_msg}  handler: {handler.__name__}()'  # for {chat_id = }
+        print(time_log)
         await context.bot.send_message(  # TODO: reply
-            chat_id=chat_id, text=time_text,
+            chat_id=chat_id, text=time_msg,
             parse_mode=ParseMode.HTML
         )
         return result
@@ -53,10 +55,13 @@ async def _send_messages_to_chat(context: ContextTypes.DEFAULT_TYPE,
             ino_all_texts_in_one = new_ino_all_texts_in_one
 
         if ino_all_texts_in_one:
-            await context.bot.send_message(  # TODO: reply
-                chat_id=chat_id, text=ino_all_texts_in_one,
-                parse_mode=ParseMode.HTML
-            )
+            try:
+                await context.bot.send_message(  # TODO: reply
+                    chat_id=chat_id, text=ino_all_texts_in_one,
+                    parse_mode=ParseMode.HTML
+                )
+            except BadRequest as e:
+                print(e.message)
 
 
 @time_measure_of_handler
