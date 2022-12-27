@@ -137,19 +137,19 @@ def get_application_with_handlers() -> Application:
 
 def handle_updates_via_webhook(event, context):
 
-    # return asyncio.run(main(event, context))
+    if cfg.IN_AWS_LAMBDA:
+        return asyncio.run(main(event, context))
 
-    if not cfg.IN_AWS_LAMBDA:
-        import yappi
-        yappi.set_clock_type("WALL")
-        with yappi.run():
-            result = asyncio.run(main(event, context))
-        current_time = time.strftime("%H_%M_%S___%d_%b_%Y", time.localtime())
-        out_filedir = Path(__file__).parent / 'profiler'
-        out_filedir.mkdir(exist_ok=True)
-        out_filepath = out_filedir / f'{current_time}.txt'
-        with open(out_filepath, 'w') as f:
-            yappi.get_func_stats().sort("ttot", "desc").print_all(out=f)
+    import yappi
+    yappi.set_clock_type("WALL")
+    with yappi.run():
+        result = asyncio.run(main(event, context))
+    current_time = time.strftime("%H_%M_%S___%d_%b_%Y", time.localtime())
+    out_filedir = Path(__file__).parent / 'profiler'
+    out_filedir.mkdir(exist_ok=True)
+    out_filepath = out_filedir / f'{current_time}.txt'
+    with open(out_filepath, 'w') as f:
+        yappi.get_func_stats().sort("ttot", "desc").print_all(out=f)
 
     return result
 
