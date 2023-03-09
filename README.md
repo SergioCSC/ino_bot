@@ -29,8 +29,7 @@ If you want to run this code locally, you need to install some python libraries 
 ```console
 pip install -r requirements.txt
 ```
-
-Then run
+Locally bot will use simple json file named **inos.json** to store inos and last post number. So you don't have to login in Amazon AWS, just run
 
 ```console
 python tg_api_connector.py
