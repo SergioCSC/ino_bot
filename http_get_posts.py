@@ -2,10 +2,11 @@ import config as cfg
 import exceptions
 import utils
 
-import re
-import http
 import requests
 from bs4 import BeautifulSoup, Tag
+
+import re
+import http
 from typing import Optional
 
 

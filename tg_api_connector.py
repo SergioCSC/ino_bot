@@ -3,17 +3,17 @@ import model
 import base  # TODO refuse to use the database directly in this module
 import utils
 
-import asyncio
-import json
-import time
-from pathlib import Path
-
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from telegram.ext import TypeHandler, CommandHandler
 from telegram.ext import Application
 from telegram.error import BadRequest
+
+import asyncio
+import json
+import time
+from pathlib import Path
 
 
 def time_measure_of_handler(handler):
@@ -23,7 +23,7 @@ def time_measure_of_handler(handler):
         result = await handler(update, context)
         t = time.time() - start_time
         chat_id = update.effective_chat.id  # type: ignore
-        time_msg = f'{t:.1f}s'
+        time_msg = f'{t:.1f} sec'
         time_log = f'{time_msg}  handler: {handler.__name__}()'  # for {chat_id = }
         print(time_log)
         await context.bot.send_message(  # TODO: reply
@@ -136,6 +136,7 @@ def get_application_with_handlers() -> Application:
     application.add_handler(CommandHandler('clear', clear_inos_command))
     application.add_handler(CommandHandler('clearall', clear_all_inos_command))
     application.add_handler(CommandHandler('list', list_inos_command))
+    application.add_handler(CommandHandler('get', get_inos_updates))
     application.add_handler(TypeHandler(Update, get_inos_updates))
     return application
 
@@ -190,7 +191,7 @@ def simulate_webhook_call() -> None:
 
 if __name__ == '__main__':
 
-    simulate_webhook_call()
+    # simulate_webhook_call()
 
-    # application = get_application_with_handlers()
-    # application.run_polling()
+    application = get_application_with_handlers()
+    application.run_polling()
